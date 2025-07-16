@@ -143,6 +143,7 @@ def clean(filepath, outputpath):
                         writer.writerow([col_A, col_B])
             else:
                 continue
+    return outputpath
 
 if __name__ == "__main__":
     input = "./inputs/test.csv"

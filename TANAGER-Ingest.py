@@ -21,13 +21,18 @@ import os
 from CSVCleaner import clean
 os.makedirs("output", exist_ok=True)
 
-input_dir = "./inputs/"
+def upload(filename):
+    print(filename)
 
+if __name__ == "__main__":
+    input = "./inputs/test.csv"
+    output = "./output/"
 
-# Load your Excel file
-df = pd.read_excel('your_file.xlsx')  # replace with your actual filename
+    # Grab folder from drive -- if it isn't in PROCESSED.txt, or IGNORE.txt
+    # place file into input with any necessary data
+    # Record what folder you grabbed in PROCESSED.txt
+    # Clean the file
+    filename = clean(input, output)
+    # Upload to VISOR
+    upload(filename)
 
-# Loop through columns from the 2nd to the last
-for col in df.columns[1:]:
-    new_df = df[[df.columns[0], col]]  # column 1 and current column
-    new_df.to_csv(f'{col}_split.csv', index=False)  # save as CSV
