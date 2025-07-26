@@ -88,9 +88,14 @@ def clean(filepath, outputpath):
     # Skip these entries
     keywords = ['garbage', 'garbabe', 'white reference']
     # Save these entries
-    small_diameter_probe = 'i=0 e=0 az=0'
-    standard_probe = 'i=12 e=35 az=0'
-    key_geometries = [small_diameter_probe, standard_probe, 'i=30 e=-45 az=0', 'i=30 e=-30 az=0', 'i=30 e=0 az=0', 'i=30 e=45 az=0', 'i=45 e=-60 az=0']
+    small_diameter_probe = 'i0 e0 az0'
+    standard_probe = 'i12 e35 az0'
+    fwd_geo = 'i30 e-45 az0'
+    spec_geo = 'i30 e-30 az0'
+    std_geo = 'i30 e0 az0'
+    back_geo = 'i30 e45 az0'
+    v_fwd_geo = 'i45 e-60 az0'
+    key_geometries = [small_diameter_probe, standard_probe, std_geo, fwd_geo, spec_geo, back_geo, v_fwd_geo]
     
     with open(filepath, 'r', encoding='utf-8') as f:
         # Read all lines
@@ -119,7 +124,7 @@ def clean(filepath, outputpath):
                 continue
 
             # Save only results from preferred Viewing Geometry
-            view_geo = row3[idx]
+            view_geo = row3[idx].replace("=","") # strip = sign for consistency
             if any(kg in view_geo for kg in key_geometries):
                 outputname = os.path.join(outputpath, f"{sample_name}_{idx}.csv")
                 
@@ -132,8 +137,26 @@ def clean(filepath, outputpath):
 
                     header_info = get_header_info(sample_name)
 
+                    # Add probe type in Other Information
+                    probe_type = ""
+                    if view_geo == small_diameter_probe:
+                        probe_type = "small diameter probe"
+                    elif view_geo == standard_probe:
+                        probe_type = "standard probe"
+                    else: probe_type = "TANAGER" # or if there are mixed types
+                    add_row(header, "Other Information", f"Probe Type: {probe_type}")
+                    
+                    view_geo_tag = ""
+                    if view_geo == fwd_geo: view_geo_tag = "_fwd"
+                    if view_geo == spec_geo: view_geo_tag = "_spec"
+                    if view_geo == std_geo: view_geo_tag = "_std"
+                    if view_geo == back_geo: view_geo_tag = "_back"
+                    if view_geo == v_fwd_geo: view_geo_tag = "_v.fwd"
+
                     add_row(header, "Database of origin:", DB_of_Origin)
-                    add_row(header, "Sample ID", sample_name)
+                    # Note: We renamed "Sample ID" to "Spectrum ID" in VISOR; this is the unique name for each DB entry.
+                    # The real Sample Name is preserved in "Original Sample ID"
+                    add_row(header, "Spectrum ID", f"{sample_name}{view_geo_tag}")
                     add_row(header, "Original Sample ID", sample_name)
                     add_row(header, "Viewing geometry", view_geo)
                     if header_info:
@@ -142,20 +165,13 @@ def clean(filepath, outputpath):
                         add_row(header, "Locality", header_info[2])
                         add_row(header, "Grain Size", header_info[3])
                     else:
-                        print("Error with header")
-                    # Both full resolution and abbreviated version available, waiting to hear back which one is preferred
-                    resolution = '3 nm @ 700 nm (VNIR, 350-1000 nm), 8 nm @ 1400/2100 nm (SWIR1, 1000-1800 nm / SWIR2, 1800-2500 nm)'
+                        print(f"Header info not found for {sample_name}")
+                    # Both full resolution and abbreviated version, in case full version looks too wordy
+                    resolution = '3 nm @ 700 nm (VNIR 350-1000 nm); 8 nm @ 1400 nm (SWIR1 1000-1800 nm); 8 nm @ 2100 nm (SWIR2 1800-2500 nm)'
                     resolution_short = '3 nm @ 700 nm and 8 nm @ 1400/2100 nm'
                     add_row(header, "Resolution", resolution)
                     
-                    # Add probe type in Other Information
-                    probe_type = ""
-                    if view_geo == small_diameter_probe:
-                        probe_type = "small diameter probe"
-                    elif view_geo == standard_probe:
-                        probe_type = "handheld probe"
-                    else: probe_type = "TANAGER"
-                    add_row(header, "Other Information", f"Probe Type: {probe_type}")
+
                     writer.writerows(header)
 
                     # Remaining rows
