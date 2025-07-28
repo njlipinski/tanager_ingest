@@ -18,7 +18,7 @@ import csv
 import pandas as pd
 from decimal import Decimal
 import os
-from CSVCleaner import clean
+from csv_cleaner import clean
 
 def upload(filename):
     print(filename)
