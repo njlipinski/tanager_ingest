@@ -19,9 +19,7 @@ import pandas as pd
 from decimal import Decimal
 import os
 from csv_cleaner import clean
-
-def upload(filename):
-    print(filename)
+from visor_uploader import upload
 
 if __name__ == "__main__":
     # Grab folders from drive -- if it isn't in PROCESSED.txt, or IGNORE.txt
@@ -71,7 +69,10 @@ if __name__ == "__main__":
                     # clean file
                     filename = clean(input_path, output_subfolder)
                     # Upload to VISOR
-                    upload(filename)
+                    # upload(filename)
+
+                    # do we upload as we go, or process, then upload later?
+                    # TODO refactor uploader to process one at a time
 
                 except Exception as e:
                     print(f"Error processng {csv_file}")
@@ -80,4 +81,3 @@ if __name__ == "__main__":
     # Record what folder you grabbed in PROCESSED.txt
         
     print("complete")
-

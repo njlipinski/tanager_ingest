@@ -182,9 +182,3 @@ def clean(filepath, outputpath):
             else:
                 continue
     return outputpath
-
-if __name__ == "__main__":
-    input = "./inputs/test.csv"
-    output = "./inputs/test1/"
-
-    clean(input, output)
