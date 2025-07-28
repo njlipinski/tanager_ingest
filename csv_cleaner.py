@@ -7,7 +7,7 @@ def get_header_info(sample_name_in):
     sample type (as material class), locality, and grain size
     """
     sample_name = sample_name_in.strip().upper()
-    if 'TS' in sample_name:
+    if 'TS-' in sample_name or 'TS_' in sample_name or 'TS ' in sample_name:
         return(
             'Twin Sisters Dunite',
             'Rock',
@@ -72,6 +72,38 @@ def get_header_info(sample_name_in):
         )
     return None
 
+def get_sample_type_mods(filepath):
+    """ Hardcoded 'Sample type's derived from folder names """
+    mods = ""
+    ref_names = [
+        "blackcurtains", 
+        "blackoutcupboards",
+        "spectralon", 
+        "aluwhite", 
+        "caltargets", 
+        # "red", # TODO: check iff name = color
+        # "yellow", 
+        # "green", 
+        # "blue", 
+        # "grey70",
+        # "gray70",
+        # "grey33",
+        # "gray33",
+        # "grey30",
+        # "gray30", 
+        # "cyan",
+        # "black", 
+        # TODO: check sample name/id if it matches --> check folder path for "witness/validation/caltarget" = reference
+        "colorchecker", 
+        "samplecup"]
+    if "mix" in filepath:
+        mods = "Mixture"
+    elif "lunar_simulant" in filepath:
+        mods = "Rock"
+    elif any (ref in filepath for ref in ref_names):
+        mods = "Reference"
+    return mods
+
 def add_row(header, label, value):
     """ Add new row to CSV header; doesn't add empty values (prevents NaN error with VISOR) """
     if value:  # excludes None, empty strings, and False
@@ -86,7 +118,7 @@ def clean(filepath, outputpath):
 
     os.makedirs(outputpath, exist_ok=True)
     # Skip these entries
-    keywords = ['garbage', 'garbabe', 'white reference']
+    keywords = ['garbage', 'garabge', 'garbabe', 'white reference']
     # Save these entries
     small_diameter_probe = 'i0 e0 az0'
     standard_probe = 'i12 e35 az0'
@@ -136,6 +168,7 @@ def clean(filepath, outputpath):
                     DB_of_Origin = 'TANAGER lab'
 
                     header_info = get_header_info(sample_name)
+                    sample_mod = get_sample_type_mods(filepath)
 
                     # Add probe type in Other Information
                     probe_type = ""
@@ -146,6 +179,7 @@ def clean(filepath, outputpath):
                     else: probe_type = "TANAGER" # or if there are mixed types
                     add_row(header, "Other Information", f"Probe Type: {probe_type}")
                     
+                    # Append TANAGER viewing gemoetry to Spectrum ID if present
                     view_geo_tag = ""
                     if view_geo == fwd_geo: view_geo_tag = "_fwd"
                     if view_geo == spec_geo: view_geo_tag = "_spec"
@@ -164,8 +198,11 @@ def clean(filepath, outputpath):
                         add_row(header, "Material class", header_info[1])
                         add_row(header, "Locality", header_info[2])
                         add_row(header, "Grain Size", header_info[3])
+                    elif sample_mod:
+                        add_row(header, "Material class", sample_mod)
                     else:
                         print(f"Header info not found for {sample_name}")
+
                     # Both full resolution and abbreviated version, in case full version looks too wordy
                     resolution = '3 nm @ 700 nm (VNIR 350-1000 nm); 8 nm @ 1400 nm (SWIR1 1000-1800 nm); 8 nm @ 2100 nm (SWIR2 1800-2500 nm)'
                     resolution_short = '3 nm @ 700 nm and 8 nm @ 1400/2100 nm'
