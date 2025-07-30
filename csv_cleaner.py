@@ -81,27 +81,30 @@ def get_sample_type_mods(filepath):
         "spectralon", 
         "aluwhite", 
         "caltargets", 
-        # "red", # TODO: check iff name = color
-        # "yellow", 
-        # "green", 
-        # "blue", 
-        # "grey70",
-        # "gray70",
-        # "grey33",
-        # "gray33",
-        # "grey30",
-        # "gray30", 
-        # "cyan",
-        # "black", 
-        # TODO: check sample name/id if it matches --> check folder path for "witness/validation/caltarget" = reference
         "colorchecker", 
         "samplecup"]
+    ref_colors = [
+        "red",
+        "yellow", 
+        "green", 
+        "blue", 
+        "grey70",
+        "gray70",
+        "grey33",
+        "gray33",
+        "grey30",
+        "gray30", 
+        "cyan",
+        "black"]
     if "mix" in filepath:
         mods = "Mixture"
     elif "lunar_simulant" in filepath:
         mods = "Rock"
     elif any (ref in filepath for ref in ref_names):
         mods = "Reference"
+    elif any (color in filepath for color in ref_colors):
+        if "witness" in filepath or "validation" in filepath:
+            mods = "Reference"
     return mods
 
 def add_row(header, label, value):
@@ -118,7 +121,7 @@ def clean(filepath, outputpath):
 
     os.makedirs(outputpath, exist_ok=True)
     # Skip these entries
-    keywords = ['garbage', 'garabge', 'garbabe', 'white reference']
+    keywords = ['garb', 'garabge', 'gargabge', 'white reference'] # 'garbabe','garbage', <-- these show up but are covered by garb
     # Save these entries
     small_diameter_probe = 'i0 e0 az0'
     standard_probe = 'i12 e35 az0'
