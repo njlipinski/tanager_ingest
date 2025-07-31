@@ -1,75 +1,102 @@
 import os
 import csv
 
+def matches_acronym(sample_name, acronyms):
+    """
+    Check if sample_name contains any acronym with '_', '-', or ' ' as suffix.
+    """
+    for acronym in acronyms:
+        for suffix in ('_', '-', ' '):
+            if f"{acronym}{suffix}" in sample_name:
+                return True
+    return False
+
 def get_header_info(sample_name_in):
     """
     Takes TANAGER Sample Name and returns human readable name, 
     sample type (as material class), locality, and grain size
     """
     sample_name = sample_name_in.strip().upper()
-    if 'TS-' in sample_name or 'TS_' in sample_name or 'TS ' in sample_name:
+
+    if matches_acronym(sample_name, ['TS']):
         return(
             'Twin Sisters Dunite',
             'Rock',
             'Twin Sisters Mountains',
             'Whole Object'
         )
-    if 'TM' in sample_name:
+    if matches_acronym(sample_name, ['TM']):
         return(
             'Table Mountain Andesite',
             'Rock',
             'Mount Baker, WA',
             'Whole Object'
         )
-    if 'DF' in sample_name:
+    if matches_acronym(sample_name, ['APA']):
+        return(
+            "Artist Point Andesite",
+            'Rock',
+            'Mount Baker, WA',
+            'Whole Object'
+        )
+    if matches_acronym(sample_name, ['DF']):
         return(
             'Dry Falls Basalt',
             'Rock',
             'Columbia River Flood Basalts',
             'Whole Object'
         )
-    if 'FC' in sample_name:
+    if matches_acronym(sample_name, ['FC']):
         return(
             'Frenchman Coulee Basalt',
             'Rock',
             'Columbia River Flood Basalts',
             'Whole Object'
         )
-    if 'GR' in sample_name:
+    if matches_acronym(sample_name, ['GB']):
         return(
             'Grand Ronde Basalt',
             'Rock',
             'Columbia River Flood Basalts',
             'Whole Object'
         )
-    if 'KD' in sample_name or 'KDT' in sample_name:
+    if matches_acronym(sample_name, ['SM']):
+        return(
+            "Saddle Mountain",
+            'Rock',
+            'Columbia River Flood Basalts',
+            'Whole Object'
+        )
+    if matches_acronym(sample_name, ['KD']) or matches_acronym(sample_name, ['KDT']):
         return(
             "Ka'u Desert Trail Basalt",
             'Rock',
             'Hawaii Volcanoes National Park',
             'Whole Object'
         )
-    if 'PC' in sample_name or 'PCT' in sample_name:
+    if matches_acronym(sample_name, ['PC']) or matches_acronym(sample_name, ['PCT']):
         return(
             "Puna Coast Trail Basalt",
             'Rock',
             'Hawaii Volcanoes National Park',
             'Whole Object'
         )
-    if 'MIT' in sample_name:
+    if matches_acronym(sample_name, ['MIT']):
         return(
             "Mauna Iki Trail Basalt",
             'Rock',
             'Hawaii Volcanoes National Park',
             'Whole Object'
         )
-    if 'CRB' in sample_name:
+    if matches_acronym(sample_name, ['CRB']):
         return(
             "Columbia River Flood Basalts",
             'Rock',
             'Columbia River Flood Basalts',
             'Whole Object'
         )
+
+    
     return None
 
 def get_sample_type_mods(filepath):

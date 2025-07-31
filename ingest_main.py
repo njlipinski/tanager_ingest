@@ -19,7 +19,7 @@ import pandas as pd
 from decimal import Decimal
 import os
 from csv_cleaner import clean
-from visor_uploader import upload
+# from visor_uploader import upload
 
 if __name__ == "__main__":
     # Grab folders from drive -- if it isn't in PROCESSED.txt, or IGNORE.txt
