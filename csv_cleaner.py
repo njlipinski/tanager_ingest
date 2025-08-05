@@ -1,5 +1,13 @@
 import os
 import csv
+import rocks_minerals
+
+def hardcoded_values(sample_name):
+    if sample_name == "906165_flush_si510" or sample_name == "906167_0.2mm_indent_si510":
+        return(
+            "XRD sample holder",
+            "Reference"
+        )
 
 def matches_acronym(sample_name, acronyms):
     """
@@ -32,6 +40,7 @@ def get_header_info(sample_name_in):
             'Mount Baker, WA',
             'Whole Object'
         )
+    # currently APA unused
     if matches_acronym(sample_name, ['APA']):
         return(
             "Artist Point Andesite",
@@ -67,14 +76,14 @@ def get_header_info(sample_name_in):
             'Columbia River Flood Basalts',
             'Whole Object'
         )
-    if matches_acronym(sample_name, ['KD']) or matches_acronym(sample_name, ['KDT']):
+    if matches_acronym(sample_name, ['KD','KDT']):
         return(
             "Ka'u Desert Trail Basalt",
             'Rock',
             'Hawaii Volcanoes National Park',
             'Whole Object'
         )
-    if matches_acronym(sample_name, ['PC']) or matches_acronym(sample_name, ['PCT']):
+    if matches_acronym(sample_name, ['PC','PCT']):
         return(
             "Puna Coast Trail Basalt",
             'Rock',
@@ -95,12 +104,12 @@ def get_header_info(sample_name_in):
             'Columbia River Flood Basalts',
             'Whole Object'
         )
-
-    
     return None
 
-def get_sample_type_mods(filepath):
-    """ Hardcoded 'Sample type's derived from folder names """
+def get_sample_type_mods(filepath, sample_name):
+    """ Hardcoded 'Sample type's derived from filepath names """
+    filepath_low = filepath.strip().lower()
+    samplename_low = sample_name.strip().lower()
     mods = ""
     ref_names = [
         "blackcurtains", 
@@ -123,15 +132,19 @@ def get_sample_type_mods(filepath):
         "gray30", 
         "cyan",
         "black"]
-    if "mix" in filepath:
+    if "mix" in filepath_low or "mix" in samplename_low:
         mods = "Mixture"
-    elif "lunar_simulant" in filepath:
+    elif "lunar_simulant" in filepath_low or "lunar_simulant" in samplename_low:
         mods = "Rock"
-    elif any (ref in filepath for ref in ref_names):
+    elif any (ref in filepath_low or ref in samplename_low for ref in ref_names):
         mods = "Reference"
-    elif any (color in filepath for color in ref_colors):
-        if "witness" in filepath or "validation" in filepath:
+    elif any (color in filepath_low or color in samplename_low for color in ref_colors):
+        if "witness" in filepath_low or "validation" in filepath_low:
             mods = "Reference"
+    elif any (rock in filepath_low or rock in samplename_low for rock in rocks_minerals.rocks):        
+        mods = "Rock"
+    elif any (mineral in filepath_low or mineral in samplename_low for mineral in rocks_minerals.minerals):
+        mods = "Mineral"
     return mods
 
 def add_row(header, label, value):
@@ -147,8 +160,10 @@ def clean(filepath, outputpath):
     """
 
     os.makedirs(outputpath, exist_ok=True)
+    filename = os.path.basename(filepath)
+
     # Skip these entries
-    keywords = ['garb', 'garabge', 'gargabge', 'white reference'] # 'garbabe','garbage', <-- these show up but are covered by garb
+    keywords = ['gar', 'garabge', 'gargabge', 'white reference', 'bad'] # 'garbabe','garbage', <-- these show up but are covered by garb
     # Save these entries
     small_diameter_probe = 'i0 e0 az0'
     standard_probe = 'i12 e35 az0'
@@ -195,10 +210,11 @@ def clean(filepath, outputpath):
                 with open(outputname, 'w', encoding='utf-8', newline='') as out:
                     writer = csv.writer(out)
 
-                    DB_of_Origin = 'TANAGER lab'
+                    DB_of_Origin = 'WWU TANAGER Lab'
 
                     header_info = get_header_info(sample_name)
-                    sample_mod = get_sample_type_mods(filepath)
+                    sample_mod = get_sample_type_mods(filename, sample_name)
+                    hard_vals = hardcoded_values(sample_name)
 
                     # Add probe type in Other Information
                     probe_type = ""
@@ -207,7 +223,7 @@ def clean(filepath, outputpath):
                     elif view_geo == standard_probe:
                         probe_type = "standard probe"
                     else: probe_type = "TANAGER" # or if there are mixed types
-                    add_row(header, "Other Information", f"Probe Type: {probe_type}")
+                    add_row(header, "Other Information", f"Probe Type: {probe_type}; Filename: {filepath}")
                     
                     # Append TANAGER viewing gemoetry to Spectrum ID if present
                     view_geo_tag = ""
@@ -223,13 +239,17 @@ def clean(filepath, outputpath):
                     add_row(header, "Spectrum ID", f"{sample_name}{view_geo_tag}")
                     add_row(header, "Original Sample ID", sample_name)
                     add_row(header, "Viewing geometry", view_geo)
-                    if header_info:
+                    if hard_vals:
+                        add_row(header, "Sample Name", hard_vals[0])
+                        add_row(header, "Material class", hard_vals[1])
+                    elif header_info:
                         add_row(header, "Sample Name", header_info[0])
                         add_row(header, "Material class", header_info[1])
                         add_row(header, "Locality", header_info[2])
                         add_row(header, "Grain Size", header_info[3])
                     elif sample_mod:
                         add_row(header, "Material class", sample_mod)
+
                     else:
                         print(f"Header info not found for {sample_name}")
 
@@ -248,4 +268,4 @@ def clean(filepath, outputpath):
                         writer.writerow([col_A, col_B])
             else:
                 continue
-    return outputpath
+    return sample_name

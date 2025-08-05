@@ -12,7 +12,6 @@ Ingest data into database
 
 """
 
-
 import xlrd
 import csv
 import pandas as pd
@@ -46,6 +45,11 @@ if __name__ == "__main__":
 
     # iterate thru Google Drive folder
     for root, dirs, files in os.walk(drive_folder):
+        
+        if not root:
+            print("Root empty")
+            continue
+        
         folder_name = os.path.basename(root)
 
         if root == drive_folder:
@@ -68,6 +72,7 @@ if __name__ == "__main__":
                 try:
                     # clean file
                     filename = clean(input_path, output_subfolder)
+                    print(filename)
                     # Upload to VISOR
                     # upload(filename)
 
@@ -75,7 +80,7 @@ if __name__ == "__main__":
                     # TODO refactor uploader to process one at a time
 
                 except Exception as e:
-                    print(f"Error processng {csv_file}")
+                    print(f"Error processng {csv_file}: {str(e)}")
 
     # place file into input with any necessary data
     # Record what folder you grabbed in PROCESSED.txt
