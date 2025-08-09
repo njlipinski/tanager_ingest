@@ -49,13 +49,13 @@ if __name__ == "__main__":
         if not root:
             print("Root empty")
             continue
-        
+
         folder_name = os.path.basename(root)
 
         if root == drive_folder:
             continue
 
-        folder_name_lower = folder_name.lower()
+        folder_name_lower = folder_name.strip().lower()
         if any (keyword in folder_name_lower for keyword in keywords):
             print(f"Skipping folder: {folder_name}")
             continue

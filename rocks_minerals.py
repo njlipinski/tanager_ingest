@@ -386,6 +386,7 @@ minerals = {
     "hessite",
     "hessonite",
     "heulandite",
+    "hexahydrite",
     "hibonite",
     "hiddenite",
     "hilgardite",
