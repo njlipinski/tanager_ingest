@@ -15,17 +15,61 @@ SKIP_WORDS = [
     "_gr10"
 ]  # 'garbabe','garbage', 'garabge', 'gargabge',<-- these show up but are covered by gar
 
-# Save these viewing geometries
-small_diameter_probe = "i0 e0 az0"
-standard_probe = "i12 e35 az0"
-fwd_geo = "i30 e-45 az0"
-spec_geo = "i30 e-30 az0"
-std_geo = "i30 e0 az0"
-back_geo = "i30 e45 az0"
-v_fwd_geo = "i45 e-60 az0"
+SMALL_DIAMETER_PROBE = "i0 e0 az0"
+STANDARD_PROBE = "i12 e35 az0"
+
+# Save these viewing geometries:
 VIEWING_GEOMETRIES = {
-    small_diameter_probe, standard_probe, fwd_geo, spec_geo, std_geo, back_geo, v_fwd_geo
-}
+    # Handheld probes
+    "small_diameter_probe": {"i0 e0 az0"},
+    "standard_probe": {"i12 e35 az0"},
+    # possible forward scatter geometries:
+    "fwd_geo": {
+        "i30 e-45 az0",
+        "i30 e-50 az0",
+        "i-30 e45 az0",
+        "i-30 e50 az0",
+        "i45 e-30 az0",
+        "i-45 e30 az0",
+        "i50 e-30 az0",
+        "i-50 e30 az0",},
+    # possible specular geometries:
+    "spec_geo": {
+        "i30 e-30 az0",
+        "i30 e-30 az0",
+        "i-30 e30 az0",
+        "i45 e-45 az0",
+        "i-45 e45 az0",},
+    # possible standard geometries:
+    "std_geo": {
+        "i30 e0 az0",
+        "i35 e0 az0",
+        "i0 e30 az0",
+        "i0 e35 az0",},
+    # possible backscatter geometries:
+    "back_geo": {
+        "i30 e45 az0",
+        "i30 e50 az0",
+        "i-30 e-45 az0",
+        "i-30 e-50 az0",
+        "i45 e30 az0",
+        "i50 e30 az0",
+        "i-45 e-30 az0",
+        "i-50 e-30 az0",},
+    # possible very forward geometries:
+    "v_fwd_geo": {
+        "i45 e-60 az0",
+        "i-45 e60 az0",
+        "i50 e-60 az0",
+        "i-50 e60 az0",
+        "i60 e-45 az0",
+        "i-60 e45 az0",
+        "i-60 e50 az0",
+        "i60 e-50 az0",
+        "i-70 e58 az0",
+        "i70 e-58 az0",},
+    }
+
 
 # Both full resolution and abbreviated version, in case full version looks too wordy
 RESOLUTION = "3 nm @ 700 nm (VNIR 350-1000 nm); 8 nm @ 1400 nm (SWIR1 1000-1800 nm); 8 nm @ 2100 nm (SWIR2 1800-2500 nm)"
@@ -83,7 +127,7 @@ def get_header_info(sample_name_in):
         return ("Dry Falls Basalt","Rock","Columbia River Flood Basalts","Whole Object")
     if matches_acronym(sample_name, ["FC"]):
         return ("Frenchman Coulee Basalt","Rock", "Columbia River Flood Basalts", "Whole Object")
-    if matches_acronym(sample_name, ["GB"]):
+    if matches_acronym(sample_name, ["GR"]):
         return ("Grand Ronde Basalt", "Rock", "Columbia River Flood Basalts", "Whole Object")
     if matches_acronym(sample_name, ["SM"]):
         return ("Saddle Mountain","Rock", "Columbia River Flood Basalts", "Whole Object")
@@ -143,8 +187,10 @@ def get_alivia_shorthand(abbreviation):
         "sap": "saponite", 
         "non": "nontronite",
         "bas": "basalt",
+        "dun": "dunite",
         "hem": "hematite",
         "eps": "epsomite",
+        "ep": "epsomite",
         "jsc": "JSC-Mars-1 soil simulant",
         "anh": "anhydrite",
         "gyp": "gypsum",
@@ -194,6 +240,9 @@ def get_alivia_components(sample_name):
 
 def get_alivia_info(filepath, sample_name):
     """ Alternate naming schemes for Alivia and Max spectra """
+
+    # Add link to Alivia's thesis in her dataset
+
     if alivia_exceptions(sample_name):
         return None
     
@@ -201,9 +250,67 @@ def get_alivia_info(filepath, sample_name):
     samplename_low = sample_name.strip().lower()
     human_readable_name = ""
 
-    if "alivia" in filepath_low or "max_claysulfate" in filepath_low or "max_goniometer" in filepath_low:
+    check_path = {
+        "alivia", 
+        "max_claysulfate", 
+        "max_goniometer", 
+        "2023_01_18_kristiana_maficmixtures.csv", 
+        "2023_02_13_kristiana_maficmixtures_jscadditional.csv",}
+
+    if any(path in filepath_low for path in check_path):
         human_readable_name = get_alivia_components(samplename_low)
         return (human_readable_name,"Mixture")
+    return None
+
+
+def translate_expanse_name(sample_name):
+    expanse_names = {
+        "farragut": ("SC", "Pre-coating, Si on Twin Sisters Dunite, 240-grit"),
+        "tripoli": ("SM", "Pre-coating, Si on Twin Sisters Dunite, 400-grit"),
+        "zenobia": ("SF", "Pre-coating, Si on Twin Sisters Dunite, 600-grit"),
+        "damascus": ("FC", "Pre-coating, Fe on Twin Sisters Dunite, 240-grit"),
+        "hammurabi": ("FM", "Pre-coating, Fe on Twin Sisters Dunite, 400-grit"),
+        "xuesen": ("FF", "Pre-coating, Fe on Twin Sisters Dunite, 600-grit"),
+        "pella": ("UC", "Uncoated Twin Sisters Dunite, 240-grit"),
+        "koto": ("UM", "Uncoated Twin Sisters Dunite, 400-grit"),
+        "tynan": ("UF", "Uncoated Twin Sisters Dunite, 600-grit"),
+    }
+    return expanse_names.get(sample_name.strip().lower())
+
+
+def get_max_info(filepath, sample_name):
+    """
+    Alternate naming schemes for Max spectra
+    Returns: Sample name, material class, spectrum_id(renamed), locality
+    """
+    # Skip this one:
+    if "2023_10_24_Max_TS_20_08_Sediments_Recon.csv" in filepath:
+        return None
+    human_readable_name = ""
+    new_spectrum_id = sample_name
+    expanse_data = translate_expanse_name(sample_name)
+    material_class = "Rock"
+    locality = "Twin Sisters Mountains"
+    
+    # Pre-coating files
+    pre_coat = {
+        "2022_12_01_Max_LPSC_PreCoat2",
+        "2022_12_05_Max_LPSC_PreCoat2.1", 
+    }
+    if any(pc in filepath for pc in pre_coat):
+        new_spectrum_id = f"{new_spectrum_id}-{expanse_data[0]}-pre"
+        human_readable_name = expanse_data[1]
+        return (human_readable_name, material_class, new_spectrum_id, locality)
+    
+    # Post-coating files
+    post_coat = {
+        "2023_01_31_Max_LPSC_NanohematiteCoatedSlabs",
+    }
+    if any(pc in filepath for pc in post_coat):
+        new_spectrum_id = f"{new_spectrum_id}-{expanse_data[0]}-post"
+        human_readable_name = expanse_data[1]
+        return (human_readable_name, material_class, new_spectrum_id, locality)
+    
     return None
 
 
@@ -256,7 +363,7 @@ def clean(filepath, outputpath):
 
             # Save only results from preferred Viewing Geometry
             view_geo = row3[idx].replace("=", "")  # strip = sign for consistency
-            if view_geo in VIEWING_GEOMETRIES:
+            if any(view_geo in geometries for geometries in VIEWING_GEOMETRIES.values()):
                 outputname = os.path.join(outputpath, f"{sample_name}_{idx}.csv")
 
                 header = []
@@ -267,15 +374,15 @@ def clean(filepath, outputpath):
                     # Sequential set of rules to follow; each will return None if the conditions are not met
                     hard_vals = hardcoded_values(sample_name)
                     alivia_info = get_alivia_info(filepath, sample_name)
+                    max_info = get_max_info(filepath, sample_name)
                     header_info = get_header_info(sample_name)
                     sample_info = get_sample_type_mods(filename, sample_name)
 
-
                     # Add probe type in Other Information
                     probe_type = ""
-                    if view_geo == small_diameter_probe:
+                    if view_geo == SMALL_DIAMETER_PROBE:
                         probe_type = "small diameter probe"
-                    elif view_geo == standard_probe:
+                    elif view_geo == STANDARD_PROBE:
                         probe_type = "standard probe"
                     else:
                         probe_type = "TANAGER"  # or if there are mixed types
@@ -287,29 +394,28 @@ def clean(filepath, outputpath):
 
                     # Append TANAGER viewing gemoetry to Spectrum ID if present
                     view_geo_tag = ""
-                    if view_geo == fwd_geo:
+                    if view_geo == "fwd_geo":
                         view_geo_tag = "_fwd"
-                    if view_geo == spec_geo:
+                    if view_geo == "spec_geo":
                         view_geo_tag = "_spec"
-                    if view_geo == std_geo:
+                    if view_geo == "std_geo":
                         view_geo_tag = "_std"
-                    if view_geo == back_geo:
+                    if view_geo == "back_geo":
                         view_geo_tag = "_back"
-                    if view_geo == v_fwd_geo:
+                    if view_geo == "v_fwd_geo":
                         view_geo_tag = "_v.fwd"
 
-                    add_row(header, "Database of origin:", DB_OF_ORIGIN)
-                    # Note: We renamed "Sample ID" to "Spectrum ID" in VISOR; this is the unique name for each DB entry.
-                    # The real Sample Name is preserved in "Original Sample ID"
-                    add_row(header, "Spectrum ID", f"{sample_name}{view_geo_tag}")
-                    add_row(header, "Original Sample ID", sample_name)
-                    add_row(header, "Viewing geometry", view_geo)
                     if hard_vals:
                         add_row(header, "Sample Name", hard_vals[0])
                         add_row(header, "Material class", hard_vals[1])
                     elif alivia_info:
                         add_row(header, "Sample Name", alivia_info[0])
                         add_row(header, "Material class", alivia_info[1])
+                    elif max_info:
+                        add_row(header, "Sample Name", max_info[0])
+                        add_row(header, "Material class", max_info[1])
+                        sample_name = max_info[2] # Renames spectrum id
+                        add_row(header, "Locality", max_info[3])
                     elif header_info:
                         add_row(header, "Sample Name", header_info[0])
                         add_row(header, "Material class", header_info[1])
@@ -322,6 +428,12 @@ def clean(filepath, outputpath):
                     else:
                         print(f"Header info not found for {sample_name}")
 
+                    add_row(header, "Database of origin:", DB_OF_ORIGIN)
+                    # Note: We renamed "Sample ID" to "Spectrum ID" in VISOR; this is the unique name for each DB entry.
+                    # The real Sample Name is preserved in "Original Sample ID"
+                    add_row(header, "Spectrum ID", f"{sample_name}{view_geo_tag}")
+                    add_row(header, "Original Sample ID", sample_name)
+                    add_row(header, "Viewing geometry", view_geo)
                     add_row(header, "Resolution", RESOLUTION)
 
                     writer.writerows(header)

@@ -26,6 +26,8 @@ if __name__ == "__main__":
     base_output = "./output/"
     os.makedirs(base_output, exist_ok=True)
 
+    count = 0
+
     # keywords to skip
     keywords = [
         "scratch", 
@@ -73,6 +75,7 @@ if __name__ == "__main__":
                     # clean file
                     filename = clean(input_path, output_subfolder)
                     print(filename)
+                    count += 1
                     # Upload to VISOR
                     # upload(filename)
 
@@ -86,3 +89,4 @@ if __name__ == "__main__":
     # Record what folder you grabbed in PROCESSED.txt
         
     print("complete")
+    print(f"{count} files processed")
