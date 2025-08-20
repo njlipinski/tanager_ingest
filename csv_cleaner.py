@@ -12,7 +12,8 @@ SKIP_WORDS = [
     "white reference",
     "bad",
     "test",
-    "_gr10"
+    "_gr10",
+    "2023_08_08_lunar_simulant_fullhem_foruwinn_a",
 ]  # 'garbabe','garbage', 'garabge', 'gargabge',<-- these show up but are covered by gar
 
 SMALL_DIAMETER_PROBE = "i0 e0 az0"
@@ -241,7 +242,7 @@ def get_alivia_components(sample_name):
 def get_alivia_info(filepath, sample_name):
     """ Alternate naming schemes for Alivia and Max spectra """
 
-    # Add link to Alivia's thesis in her dataset
+    # TODO: Add link to Alivia's thesis in her dataset
 
     if alivia_exceptions(sample_name):
         return None
@@ -281,7 +282,7 @@ def translate_expanse_name(sample_name):
 def get_max_info(filepath, sample_name):
     """
     Alternate naming schemes for Max spectra
-    Returns: Sample name, material class, spectrum_id(renamed), locality
+    Returns: Sample name, material class, locality, spectrum_id(renamed)
     """
     # Skip this one:
     if "2023_10_24_Max_TS_20_08_Sediments_Recon.csv" in filepath:
@@ -300,7 +301,7 @@ def get_max_info(filepath, sample_name):
     if any(pc in filepath for pc in pre_coat):
         new_spectrum_id = f"{new_spectrum_id}-{expanse_data[0]}-pre"
         human_readable_name = expanse_data[1]
-        return (human_readable_name, material_class, new_spectrum_id, locality)
+        return (human_readable_name, material_class, locality, new_spectrum_id)
     
     # Post-coating files
     post_coat = {
@@ -309,7 +310,7 @@ def get_max_info(filepath, sample_name):
     if any(pc in filepath for pc in post_coat):
         new_spectrum_id = f"{new_spectrum_id}-{expanse_data[0]}-post"
         human_readable_name = expanse_data[1]
-        return (human_readable_name, material_class, new_spectrum_id, locality)
+        return (human_readable_name, material_class, locality, new_spectrum_id)
     
     return None
 
@@ -318,6 +319,43 @@ def add_row(header, label, value):
     """Add new row to CSV header; doesn't add empty values (prevents NaN error with VISOR)"""
     if value:  # excludes None, empty strings, and False
         header.append([label, value])
+
+
+# Gather header info based on naming conventions
+def apply_filters(filepath, sample_name_in):
+    # Returns: 0)Sample name, 1)Material class, 2)Locality, 3)Grain size, 4)Spectrum id (if updated)
+    sample_name = sample_name_in
+    material_class = ""
+    locality = ""
+    grain_size = ""
+    new_spectrum_id = ""
+
+    hard_vals = hardcoded_values(sample_name)
+    alivia_info = get_alivia_info(filepath, sample_name)
+    max_info = get_max_info(filepath, sample_name)
+    header_info = get_header_info(sample_name)
+    sample_info = get_sample_type_mods(filepath, sample_name)
+
+    if hard_vals:
+        sample_name = hard_vals[0]
+        material_class = hard_vals[1]
+    elif alivia_info:
+        sample_name = alivia_info[0]
+        material_class = alivia_info[1]
+    elif max_info:
+        sample_name = max_info[0]
+        material_class = max_info[1]
+        locality = max_info[2]
+        new_spectrum_id = max_info[3]
+    elif header_info:
+        sample_name = header_info[0]
+        material_class = header_info[1]
+        locality = header_info[2]
+        grain_size = header_info[3]
+    elif sample_info:
+        sample_name = sample_info[0]
+        material_class = sample_info[1]
+    return (sample_name, material_class, locality, grain_size, new_spectrum_id)
 
 
 # Main cleaning method used by tanager_main to prepare data for ingestion
@@ -330,6 +368,13 @@ def clean(filepath, outputpath):
 
     os.makedirs(outputpath, exist_ok=True)
     filename = os.path.basename(filepath)
+
+    # Viewing geometries to be used for this file (only one of each)
+    fwd = ""
+    spec = ""
+    std = ""
+    back = ""
+    v_fwd = ""
 
     with open(filepath, "r", encoding="utf-8") as f:
         # Read all lines
@@ -357,12 +402,13 @@ def clean(filepath, outputpath):
             # sample_name here is actually the Spectrum ID in Visor
             sample_name = row2[idx].strip().lower()
             
-            # Skip any results that contain garbage data
+            # Skip these results: bad files or garbage data
             if any(sw in sample_name for sw in SKIP_WORDS):
                 continue
 
             # Save only results from preferred Viewing Geometry
             view_geo = row3[idx].replace("=", "")  # strip = sign for consistency
+
             if any(view_geo in geometries for geometries in VIEWING_GEOMETRIES.values()):
                 outputname = os.path.join(outputpath, f"{sample_name}_{idx}.csv")
 
@@ -371,14 +417,10 @@ def clean(filepath, outputpath):
                 with open(outputname, "w", encoding="utf-8", newline="") as out:
                     writer = csv.writer(out)
 
-                    # Sequential set of rules to follow; each will return None if the conditions are not met
-                    hard_vals = hardcoded_values(sample_name)
-                    alivia_info = get_alivia_info(filepath, sample_name)
-                    max_info = get_max_info(filepath, sample_name)
-                    header_info = get_header_info(sample_name)
-                    sample_info = get_sample_type_mods(filename, sample_name)
+                    # Get header info using filters built for different naming conventions
+                    filtered_data = apply_filters(filepath, sample_name)
 
-                    # Add probe type in Other Information
+                    # Add probe type and filename in Other Information
                     probe_type = ""
                     if view_geo == SMALL_DIAMETER_PROBE:
                         probe_type = "small diameter probe"
@@ -405,25 +447,13 @@ def clean(filepath, outputpath):
                     if view_geo == "v_fwd_geo":
                         view_geo_tag = "_v.fwd"
 
-                    if hard_vals:
-                        add_row(header, "Sample Name", hard_vals[0])
-                        add_row(header, "Material class", hard_vals[1])
-                    elif alivia_info:
-                        add_row(header, "Sample Name", alivia_info[0])
-                        add_row(header, "Material class", alivia_info[1])
-                    elif max_info:
-                        add_row(header, "Sample Name", max_info[0])
-                        add_row(header, "Material class", max_info[1])
-                        sample_name = max_info[2] # Renames spectrum id
-                        add_row(header, "Locality", max_info[3])
-                    elif header_info:
-                        add_row(header, "Sample Name", header_info[0])
-                        add_row(header, "Material class", header_info[1])
-                        add_row(header, "Locality", header_info[2])
-                        add_row(header, "Grain Size", header_info[3])
-                    elif sample_info:
-                        add_row(header, "Sample Name", sample_info[0])
-                        add_row(header, "Material class", sample_info[1])
+                    if filtered_data:
+                        add_row(header, "Sample Name", filtered_data[0])
+                        add_row(header, "Material class", filtered_data[1])
+                        add_row(header, "Locality", filtered_data[2])
+                        add_row(header, "Grain Size", filtered_data[3])
+                        if filtered_data[4]: # Renames spectrum id
+                            sample_name = filtered_data[4] 
 
                     else:
                         print(f"Header info not found for {sample_name}")
