@@ -37,7 +37,6 @@ VIEWING_GEOMETRIES = {
     # possible specular geometries:
     "spec_geo": {
         "i30 e-30 az0",
-        "i30 e-30 az0",
         "i-30 e30 az0",
         "i45 e-45 az0",
         "i-45 e45 az0",},
@@ -84,6 +83,13 @@ REF_COLORS = [
     "red", "yellow", "green", "blue", "grey70", "gray70", "grey33", "gray33",
     "grey30", "gray30", "cyan", "black",
 ]
+
+
+#########################################################################################################
+#                                                                                                       #
+#                   Filters used by "Clean" method for different datasets                               #
+#                                                                                                       #
+#########################################################################################################
 
 
 def hardcoded_values(sample_name):
@@ -315,6 +321,13 @@ def get_max_info(filepath, sample_name):
     return None
 
 
+#########################################################################################################
+#                                                                                                       #
+#                       Main "Clean" function and assorted helper methods                               #
+#                                                                                                       #
+#########################################################################################################
+
+
 def add_row(header, label, value):
     """Add new row to CSV header; doesn't add empty values (prevents NaN error with VISOR)"""
     if value:  # excludes None, empty strings, and False
@@ -358,6 +371,23 @@ def apply_filters(filepath, sample_name_in):
     return (sample_name, material_class, locality, grain_size, new_spectrum_id)
 
 
+def is_valid_geo(view_geo):
+    """ Check if the viewing geometry matches one in the set of valid VIEWING_GEOMETRIES """
+    # category included to prevent geometries from registering as a tuple
+    for category, geometries in VIEWING_GEOMETRIES.items():
+        if view_geo in geometries:
+            return True
+    return False
+
+
+def get_geo_cat(view_geo):
+    """ Returns the viewing geometry category (eg: forward, back, etc) """
+    for category, geometries in VIEWING_GEOMETRIES.items():
+        if view_geo in geometries:
+            return category
+    return None
+
+
 # Main cleaning method used by tanager_main to prepare data for ingestion
 def clean(filepath, outputpath):
     """
@@ -370,11 +400,15 @@ def clean(filepath, outputpath):
     filename = os.path.basename(filepath)
 
     # Viewing geometries to be used for this file (only one of each)
-    fwd = ""
-    spec = ""
-    std = ""
-    back = ""
-    v_fwd = ""
+    active_geos = {
+        "small_diameter_probe": None,
+        "standard_probe": None,
+        "fwd_geo": None,
+        "spec_geo": None,
+        "std_geo": None,
+        "back_geo": None,
+        "v_fwd_geo": None,
+    }
 
     with open(filepath, "r", encoding="utf-8") as f:
         # Read all lines
@@ -389,6 +423,7 @@ def clean(filepath, outputpath):
         row2 = cell[1]  # Row of sample names
         row3 = cell[2]  # Row of viewing geometries
         cols = len(row2)  # Number of columns
+
         # Find the index of the row where the first column contains "wavelength"
         start_idx = None
         for i, row in enumerate(cell):
@@ -409,7 +444,22 @@ def clean(filepath, outputpath):
             # Save only results from preferred Viewing Geometry
             view_geo = row3[idx].replace("=", "")  # strip = sign for consistency
 
-            if any(view_geo in geometries for geometries in VIEWING_GEOMETRIES.values()):
+            if is_valid_geo(view_geo):
+                # Get category of geometry
+                geo_cat = get_geo_cat(view_geo)
+
+                if geo_cat not in active_geos:
+                    print(f"Error in {filename} with category: {geo_cat} for {view_geo}")
+                    continue
+
+                # Mark this geometry type if it's previously unused
+                if active_geos[geo_cat] is None:
+                    active_geos[geo_cat] = view_geo
+                
+                # Skip if it's been used and doesn't match
+                elif active_geos[geo_cat] is not view_geo:
+                    continue
+
                 outputname = os.path.join(outputpath, f"{sample_name}_{idx}.csv")
 
                 header = []
@@ -431,20 +481,21 @@ def clean(filepath, outputpath):
                     add_row(
                         header,
                         "Other Information",
-                        f"Probe Type: {probe_type}; Filename: {filepath}", # TODO: Change filepath --> filename, currently using path to bugtest
+                        f"Probe Type: {probe_type}; Filename: {filepath}", 
+                        # TODO: Change filepath --> filename, currently using path to bugtest
                     )
 
                     # Append TANAGER viewing gemoetry to Spectrum ID if present
                     view_geo_tag = ""
-                    if view_geo == "fwd_geo":
+                    if geo_cat == "fwd_geo":
                         view_geo_tag = "_fwd"
-                    if view_geo == "spec_geo":
+                    if geo_cat == "spec_geo":
                         view_geo_tag = "_spec"
-                    if view_geo == "std_geo":
+                    if geo_cat == "std_geo":
                         view_geo_tag = "_std"
-                    if view_geo == "back_geo":
+                    if geo_cat == "back_geo":
                         view_geo_tag = "_back"
-                    if view_geo == "v_fwd_geo":
+                    if geo_cat == "v_fwd_geo":
                         view_geo_tag = "_v.fwd"
 
                     if filtered_data:

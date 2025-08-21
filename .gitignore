@@ -1,2 +1,3 @@
 *.csv
 __pycache__/csv_cleaner.cpython-313.pyc
+__pycache__/rocks_minerals.cpython-313.pyc
