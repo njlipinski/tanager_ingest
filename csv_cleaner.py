@@ -13,7 +13,6 @@ SKIP_WORDS = [
     "bad",
     "test",
     "_gr10",
-    "2023_08_08_lunar_simulant_fullhem_foruwinn_a",
 ]  # 'garbabe','garbage', 'garabge', 'gargabge',<-- these show up but are covered by gar
 
 SMALL_DIAMETER_PROBE = "i0 e0 az0"
@@ -33,19 +32,22 @@ VIEWING_GEOMETRIES = {
         "i45 e-30 az0",
         "i-45 e30 az0",
         "i50 e-30 az0",
-        "i-50 e30 az0",},
+        "i-50 e30 az0",
+        },
     # possible specular geometries:
     "spec_geo": {
         "i30 e-30 az0",
         "i-30 e30 az0",
         "i45 e-45 az0",
-        "i-45 e45 az0",},
+        "i-45 e45 az0",
+        },
     # possible standard geometries:
     "std_geo": {
         "i30 e0 az0",
         "i35 e0 az0",
         "i0 e30 az0",
-        "i0 e35 az0",},
+        "i0 e35 az0",
+        },
     # possible backscatter geometries:
     "back_geo": {
         "i30 e45 az0",
@@ -55,7 +57,8 @@ VIEWING_GEOMETRIES = {
         "i45 e30 az0",
         "i50 e30 az0",
         "i-45 e-30 az0",
-        "i-50 e-30 az0",},
+        "i-50 e-30 az0",
+        },
     # possible very forward geometries:
     "v_fwd_geo": {
         "i45 e-60 az0",
@@ -67,7 +70,8 @@ VIEWING_GEOMETRIES = {
         "i-60 e50 az0",
         "i60 e-50 az0",
         "i-70 e58 az0",
-        "i70 e-58 az0",},
+        "i70 e-58 az0",
+        },
     }
 
 
@@ -173,16 +177,18 @@ def get_sample_type_mods(filepath, sample_name):
 def alivia_exceptions(sample_name):
     """ process these exact spectrum_ids with standard logic (not alivia's conventions)"""
     exceptions = {
-        'Kieserite',
-        'DF_18_003_<125um',
-        'GR_19_01_75-106um',
-        'TS_20_28_<125um',
-        'Epsomite_75-106um',
-        'Epsomite',
-        'JSC',
-        'TS-20-28-powdered-finer125um',
+        'kieserite',
+        'df_18_003_<125um',
+        'gr_19_01_75-106um',
+        'ts_20_28_<125um',
+        'epsomite_75-106um',
+        'epsomite',
+        'jsc',
+        'ts-20-28-powdered-finer125um',
         'gypsum',
-        'basalt'
+        'basalt',
+        'nontronite_75_106um',
+        'saponite_75_106um',
     }
     return sample_name in exceptions
 
@@ -261,6 +267,7 @@ def get_alivia_info(filepath, sample_name):
         "alivia", 
         "max_claysulfate", 
         "max_goniometer", 
+        "2022_09_09_max_mixturesamples",
         "2023_01_18_kristiana_maficmixtures.csv", 
         "2023_02_13_kristiana_maficmixtures_jscadditional.csv",}
 
@@ -294,7 +301,7 @@ def get_max_info(filepath, sample_name):
     if "2023_10_24_Max_TS_20_08_Sediments_Recon.csv" in filepath:
         return None
     human_readable_name = ""
-    new_spectrum_id = sample_name
+    new_spectrum_id = "TS-20-08"
     expanse_data = translate_expanse_name(sample_name)
     material_class = "Rock"
     locality = "Twin Sisters Mountains"
@@ -457,8 +464,12 @@ def clean(filepath, outputpath):
                     active_geos[geo_cat] = view_geo
                 
                 # Skip if it's been used and doesn't match
-                elif active_geos[geo_cat] is not view_geo:
+                elif active_geos[geo_cat] != view_geo:
+                    print(f"{active_geos[geo_cat]} doesn't match {view_geo}")
                     continue
+
+                else:
+                    print("Subsequent entries of same geometry working as intended")
 
                 outputname = os.path.join(outputpath, f"{sample_name}_{idx}.csv")
 
