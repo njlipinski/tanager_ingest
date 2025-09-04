@@ -88,6 +88,13 @@ REF_COLORS = [
     "grey30", "gray30", "cyan", "black",
 ]
 
+IMAGE_DESCRIPTION = "The metal ring in the image is 2.8 cm in diameter"
+
+# Reference URLs
+REF_CEDAR = 'Lapo, Kristiana; Hoza, Kathleen; Theuer, Sammy; and Rice, Melissa S., "Reflectance spectroscopy datasets for the validation of TANAGER" (2024). Geology Faculty Publications. 107. https://cedar.wwu.edu/geology_facpubs/107'
+REF_CEDAR_DOI = "DOI: https://doi.org/10.25710/qzzg-bp63"
+REF_SAMMY = "https://cedar.wwu.edu/wwuet/1347/"
+
 
 #########################################################################################################
 #                                                                                                       #
@@ -328,6 +335,16 @@ def get_max_info(filepath, sample_name):
     return None
 
 
+def get_reference_info(filepath):
+    """
+    Returns reference info
+    """
+    filepath_low = filepath.strip().lower()
+    if "sammy" in filepath_low:
+        return REF_SAMMY
+    return None
+
+
 #########################################################################################################
 #                                                                                                       #
 #                       Main "Clean" function and assorted helper methods                               #
@@ -343,7 +360,7 @@ def add_row(header, label, value):
 
 # Gather header info based on naming conventions
 def apply_filters(filepath, sample_name_in):
-    # Returns: 0)Sample name, 1)Material class, 2)Locality, 3)Grain size, 4)Spectrum id (if updated)
+    # Returns: 0)Sample name, 1)Material class, 2)Locality, 3)Grain size, 4)Spectrum id (if updated), 5)References
     sample_name = sample_name_in
     material_class = ""
     locality = ""
@@ -355,6 +372,7 @@ def apply_filters(filepath, sample_name_in):
     max_info = get_max_info(filepath, sample_name)
     header_info = get_header_info(sample_name)
     sample_info = get_sample_type_mods(filepath, sample_name)
+    references = get_reference_info(filepath)
 
     if hard_vals:
         sample_name = hard_vals[0]
@@ -375,7 +393,7 @@ def apply_filters(filepath, sample_name_in):
     elif sample_info:
         sample_name = sample_info[0]
         material_class = sample_info[1]
-    return (sample_name, material_class, locality, grain_size, new_spectrum_id)
+    return (sample_name, material_class, locality, grain_size, new_spectrum_id, references)
 
 
 def is_valid_geo(view_geo):
@@ -514,8 +532,9 @@ def clean(filepath, outputpath):
                         add_row(header, "Material class", filtered_data[1])
                         add_row(header, "Locality", filtered_data[2])
                         add_row(header, "Grain Size", filtered_data[3])
-                        if filtered_data[4]: # Renames spectrum id
+                        if filtered_data[4]: # Renames spectrum id if required
                             sample_name = filtered_data[4] 
+                        add_row(header, "References", filtered_data[5])
 
                     else:
                         print(f"Header info not found for {sample_name}")

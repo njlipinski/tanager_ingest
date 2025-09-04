@@ -1,3 +1,3 @@
 @echo off
 REM Launch PowerShell with conda initialized and run the commands
-%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\ProgramData\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\ProgramData\anaconda3' ; conda activate visor ; Set-Location 'C:\Users\lipinsn\Documents\GitHub\wwu_spec' ; python .\manage.py shell_plus --notebook"
+%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\ProgramData\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\ProgramData\anaconda3' ; conda activate visor ; Set-Location 'C:\Users\lipinsn\Documents\GitHub\wwu_spec' ; python .\manage.py shell_plus --notebook ; Start-Sleep 3 ; Start-Process 'http://localhost:8888/notebooks/visor_programming_manual.ipynb'"
