@@ -94,6 +94,8 @@ IMAGE_DESCRIPTION = "The metal ring in the image is 2.8 cm in diameter"
 REF_CEDAR = 'Lapo, Kristiana; Hoza, Kathleen; Theuer, Sammy; and Rice, Melissa S., "Reflectance spectroscopy datasets for the validation of TANAGER" (2024). Geology Faculty Publications. 107. https://cedar.wwu.edu/geology_facpubs/107'
 REF_CEDAR_DOI = "DOI: https://doi.org/10.25710/qzzg-bp63"
 REF_SAMMY = "https://cedar.wwu.edu/wwuet/1347/"
+REF_MAX = "https://www.hou.usra.edu/meetings/lpsc2024/pdf/1788.pdf"
+REF_ALIVIA = "https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023JE008033"
 
 
 #########################################################################################################
@@ -331,7 +333,6 @@ def get_max_info(filepath, sample_name):
         new_spectrum_id = f"{new_spectrum_id}-{expanse_data[0]}-post"
         human_readable_name = expanse_data[1]
         return (human_readable_name, material_class, locality, new_spectrum_id)
-    
     return None
 
 
@@ -342,6 +343,10 @@ def get_reference_info(filepath):
     filepath_low = filepath.strip().lower()
     if "sammy" in filepath_low:
         return REF_SAMMY
+    if "max" in filepath_low:
+        return REF_MAX
+    if "alivia" in filepath_low:
+        return REF_ALIVIA
     return None
 
 
