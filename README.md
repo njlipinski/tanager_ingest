@@ -3,6 +3,14 @@
 Scripts for preparing reflectance spectra from the WWU TANAGER Lab for upload to the
 **VISOR** spectral database (the `wwu_spec` Django project).
 
+The Three-Axis N-sample Automated Goniometer for Evaluating Reflectance (**TANAGER**) is
+a custom goniometer designed to rapidly acquire spectra of natural rock surfaces across
+the full scattering hemisphere. TANAGER interfaces with a Malvern Panalytical ASD
+FieldSpec 4 Hi-Res reflectance spectrometer to collect data from 350–2500 nm at a range
+of incidence, emission and azimuth angles. Some datasets were instead collected with the
+ASD's handheld contact probes (standard and small-diameter). The cleaner labels each
+spectrum with the instrument that collected it.
+
 The lab's processed spectra live in a shared Google Drive folder as multi-sample CSV
 files. Each file has one column per measurement. This repo:
 
@@ -24,7 +32,7 @@ files. Each file has one column per measurement. This repo:
 | [rocks_minerals.py](rocks_minerals.py) | Two lookup sets, `minerals` and `rocks`, used to guess a sample's material class from its name or path. |
 | [visor_uploader.py](visor_uploader.py) | `upload(target_dir)` ingests every CSV in each subfolder of `target_dir` into VISOR through Django ORM calls. Must run inside the `wwu_spec` environment. |
 | [launch_notebook.bat](launch_notebook.bat) | Windows helper that activates the `visor` conda environment and opens a `shell_plus` Jupyter notebook in the `wwu_spec` repo. |
-| [test-images/](test-images/) | Sample photos (rock slabs with a 2.8 cm reference ring). The pipeline does not use them yet. See `IMAGE_DESCRIPTION` in `csv_cleaner.py`. |
+| [test-images/](test-images/) | Sample photos (rock slabs with a 2.8 cm reference ring). These will eventually be attached to VISOR entries, but the pipeline does not use them yet. See `IMAGE_DESCRIPTION` in `csv_cleaner.py`. |
 | [docs/cleaning-rules.md](docs/cleaning-rules.md) | Detailed reference: input CSV format, output format, viewing geometries, and how each metadata field is derived. |
 
 ## Requirements
